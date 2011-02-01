@@ -19,6 +19,7 @@ Changelog
 ---------
 
 **Alpha-0.1**
+
 * First public alpha release
 
 License
