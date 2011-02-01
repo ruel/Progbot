@@ -1,0 +1,30 @@
+# This is the responses file. If a line has a pound (#) symbol at front, the line is ignored.
+#
+# The syntax for this file is:
+# 	match string ~ [S|A|R] ~ string
+#
+#	S - PRIVMSG String
+#	A - ACTION String
+#	R - RAW String
+#
+#	NOTE: Progbot won't recognize any RAW conditions unless the source is the defined owner
+#
+# Example:
+#	Hi! ~ S ~ Hello!
+#		- Whenever you say 'Hi!', Progbot says 'Hello!' back.
+#
+# Special Variables:
+#	%nick% 		- Source nick
+#	%bnick%		- Bot nick
+#	%source%	- Source Medium
+#	%m%			- String Match
+#
+
+%bnick% ~ S ~ Sup %nick%?
+sup ~ S ~ sup your face.
+slap me ~ A ~ slaps %nick%
+
+# Channel commands
+!j %m% ~ R ~ JOIN :#%m%
+!p %m% ~ R ~ PART #%m%
+!p ~ R ~ PART %source%
