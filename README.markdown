@@ -7,6 +7,7 @@ Progbot
 Progbot is a progressive IRC bot in Python. The main purpose of this project is to build a learning IRC bot, which logs messages, analyze them, and learn from them. It can respond to questions, perform web queries, and can ignore/block other users.
 
 **Dependencies**:
+
 * Python 2.7
 
 Features
