@@ -40,12 +40,12 @@ class Progbot:
 	Owner	= 'Ruel'
 	File	= 'responses.txt'
 	
-	__sock 		= socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-	__buffer 	= ''
-	__source	= 'Anonymous'
-	__target	= Channel
-	__done 		= False
-	__owner		= False
+	_sock 		= socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+	_buffer 	= ''
+	_source	= 'Anonymous'
+	_target	= Channel
+	_done 		= False
+	_owner		= False
 	
 	def __init__(self, nck, serv, pt, chan, own):
 		'''
@@ -65,40 +65,40 @@ class Progbot:
 			the console window verbose (True or False).
 		'''
 		
-		self.__sock.connect((self.Server, int(self.Port)))
-		self.__sock.send("NICK " + self.Nick + "\r\n")
-		self.__sock.send("USER " + self.Nick + " " + self.Nick + " " + self.Nick + " :Progbot - Ruel.me\r\n")
-		self.__sock.send("JOIN " + self.Channel + "\r\n")
+		self._sock.connect((self.Server, int(self.Port)))
+		self._sock.send("NICK " + self.Nick + "\r\n")
+		self._sock.send("USER " + self.Nick + " " + self.Nick + " " + self.Nick + " :Progbot - Ruel.me\r\n")
+		self._sock.send("JOIN " + self.Channel + "\r\n")
 		while True:
-			self.__buffer = self.__sock.recv(1024)
+			self._buffer = self._sock.recv(1024)
 			if verbose:
-				print self.__buffer
-			self.__parseLine(self.__buffer)
-			if self.__done:
-				self.__sock.close()
+				print self._buffer
+			self._parseLine(self._buffer)
+			if self._done:
+				self._sock.close()
 				break;
 	
-	def __parseLine(self, line):
+	def _parseLine(self, line):
 		'''
 			Parse every line, check for PING, or match responses.
 		'''
-		self.__owner = False
+		self._owner = False
 		line = line.strip()
 		words = line.split()
-		self.__checkOwn(words[0])
-		self.__pong(words)
-		self.__checkQuit(words)
+		self._checkOwn(words[0])
+		self._pong(words)
+		self._checkQuit(words)
 		if words[1] == 'PRIVMSG':
-			self.__checkResponse(words, self.File)
+			self._checkResponse(words, self.File)
 		
-	def __checkOwn(self, source):
+	def _checkOwn(self, source):
 		if source.find('!') != -1:
 			nameStr = source.split('!')
-			self.__source = nameStr[0].lstrip(':')
-			if self.Owner == self.__source:
-				self.__owner = True
+			self._source = nameStr[0].lstrip(':')
+			if self.Owner == self._source:
+				self._owner = True
 		
-	def __checkResponse(self, words, file):
+	def _checkResponse(self, words, file):
 		'''
 			This opens responses.txt file, and checks if the array is related to the items
 			at the text file. This will actually eliminate confusing if-else blocks.
@@ -106,7 +106,7 @@ class Progbot:
 		
 		import re
 		
-		self.__target = words[2] if self.Nick != words[2] else self.__source
+		self._target = words[2] if self.Nick != words[2] else self._source
 		msg = ''
 		for i in range(3, len(words)):
 			msg += words[i] + ' '
@@ -127,13 +127,13 @@ class Progbot:
 			msgStr = config[2]
 			response = ''
 			
-			matchStr = matchStr.replace('%nick%', self.__source)
+			matchStr = matchStr.replace('%nick%', self._source)
 			matchStr = matchStr.replace('%bnick%', self.Nick)
-			matchStr = matchStr.replace('%source%', self.__target)
+			matchStr = matchStr.replace('%source%', self._target)
 			
-			msgStr = msgStr.replace('%nick%', self.__source)
+			msgStr = msgStr.replace('%nick%', self._source)
 			msgStr = msgStr.replace('%bnick%', self.Nick)
-			msgStr = msgStr.replace('%source%', self.__target)
+			msgStr = msgStr.replace('%source%', self._target)
 			
 			if matchStr.find('%m%') != -1:
 				'''
@@ -154,30 +154,30 @@ class Progbot:
 					Check if the case on the file, matches the current message.
 				'''
 				if mType == 'S':
-					response = "PRIVMSG " + self.__target + " :" + msgStr
+					response = "PRIVMSG " + self._target + " :" + msgStr
 				elif mType == 'A':
-					response = "PRIVMSG " + self.__target + " :" + chr(1) + "ACTION " + msgStr + chr(1)
-				elif self.__owner and mType == 'R':
+					response = "PRIVMSG " + self._target + " :" + chr(1) + "ACTION " + msgStr + chr(1)
+				elif self._owner and mType == 'R':
 					response = msgStr
 				print response
-				self.__sock.send(response + "\r\n")
+				self._sock.send(response + "\r\n")
 		
-	def __pong(self, words):
+	def _pong(self, words):
 		'''
 			Respond to PING! That's one of the most important tasks to
 			stay alive at the server.
 		'''
 		if words[0] == 'PING':
-			self.__sock.send("PONG " + words[1] + "\r\n")
+			self._sock.send("PONG " + words[1] + "\r\n")
 	
-	def __checkQuit(self, words):
+	def _checkQuit(self, words):
 		'''
 			Quit the connection to the IRC Server.
 		'''
 		if words[1] == 'PRIVMSG':
-			if  self.__owner and words[3] == ':!q':
-				self.__sock.send("QUIT\r\n")
-				self.__done = True
+			if  self._owner and words[3] == ':!q':
+				self._sock.send("QUIT\r\n")
+				self._done = True
 		
 '''
 	END OF CODE
