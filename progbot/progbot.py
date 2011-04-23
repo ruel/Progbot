@@ -20,6 +20,8 @@
 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 '''
 
+import re
+
 class Progbot:
 	'''
 		This is the Progbot class. This functions like a regular
@@ -42,10 +44,13 @@ class Progbot:
 	
 	_sock 		= socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	_buffer 	= ''
-	_source	= 'Anonymous'
-	_target	= Channel
+	_last		= ''
+	_source		= 'Anonymous'
+	_target		= Channel
 	_done 		= False
 	_owner		= False
+	_flood		= False
+	_flood2		= False
 	
 	def __init__(self, nck, serv, pt, chan, own):
 		'''
@@ -66,9 +71,9 @@ class Progbot:
 		'''
 		
 		self._sock.connect((self.Server, int(self.Port)))
-		self._sock.send("NICK " + self.Nick + "\r\n")
-		self._sock.send("USER " + self.Nick + " " + self.Nick + " " + self.Nick + " :Progbot - Ruel.me\r\n")
-		self._sock.send("JOIN " + self.Channel + "\r\n")
+		self._sock.send("NICK %s\r\n" % self.Nick )
+		self._sock.send("USER %s %s %s :Progbot - Ruel.me\r\n" % (self.Nick, self.Nick, self.Nick))
+		self._sock.send("JOIN %s\r\n" % self.Channel)
 		while True:
 			self._buffer = self._sock.recv(1024)
 			if verbose:
@@ -87,7 +92,10 @@ class Progbot:
 		words = line.split()
 		self._checkOwn(words[0])
 		self._pong(words)
+		self._checkSayChan(words)
 		self._checkQuit(words)
+		self._checkKick(words)
+		
 		if words[1] == 'PRIVMSG':
 			self._checkResponse(words, self.File)
 		
@@ -98,34 +106,27 @@ class Progbot:
 			if self.Owner == self._source:
 				self._owner = True
 		
-	def _checkResponse(self, words, file):
+	def _checkResponse(self, words, rfile):
 		'''
 			This opens responses.txt file, and checks if the array is related to the items
 			at the text file. This will actually eliminate confusing if-else blocks.
-		'''
-		
-		import re
-		
+		'''		
 		self._target = words[2] if self.Nick != words[2] else self._source
 		msg = ''
 		for i in range(3, len(words)):
 			msg += words[i] + ' '
 		msg = msg.lstrip(':').rstrip(' ')
-		fh = open(file, 'r')
+		fh = open(rfile, 'r')
 		
 		for line in fh:
 			'''
 				Loop through each line in the file.
 			'''
 			
-			if line[0] == '#' or line == '' or line.find('~') == -1:
+			if line[0] == '#' or line == '' or not '~' in line:
 				continue
 				
-			config = line.split(' ~ ')
-			matchStr = config[0]
-			mType = config[1]
-			msgStr = config[2]
-			response = ''
+			matchStr, mType, msgStr = line.split(' ~ ', 3)
 			
 			matchStr = matchStr.replace('%nick%', self._source)
 			matchStr = matchStr.replace('%bnick%', self.Nick)
@@ -135,7 +136,7 @@ class Progbot:
 			msgStr = msgStr.replace('%bnick%', self.Nick)
 			msgStr = msgStr.replace('%source%', self._target)
 			
-			if matchStr.find('%m%') != -1:
+			if '%m%' in matchStr:
 				'''
 					Check if there's a matching string.
 				'''
@@ -154,13 +155,30 @@ class Progbot:
 					Check if the case on the file, matches the current message.
 				'''
 				if mType == 'S':
-					response = "PRIVMSG " + self._target + " :" + msgStr
+					response = "PRIVMSG %s :%s" % (self._target, msgStr)
 				elif mType == 'A':
-					response = "PRIVMSG " + self._target + " :" + chr(1) + "ACTION " + msgStr + chr(1)
+					response = "PRIVMSG %s :%sACTION %s%s" % (self._target, chr(1), msgStr, chr(1))
 				elif self._owner and mType == 'R':
 					response = msgStr
 				print response
-				self._sock.send(response + "\r\n")
+				
+				# Check if the last response is the same as the present
+				if response == self._last:
+					self._flood = True
+				else:
+					self._flood = False
+					self._flood2 = False
+					
+				# Flooding Protection
+				if self._flood:
+					if not self._flood2:
+						self._sock.send("PRIVMSG %s :Nope, you can't flood me.\r\n" % self._target)
+						self._flood2 = True
+				else:
+					self._sock.send("%s\r\n" % response)
+				
+				# Copy the last response
+				self._last = response
 		
 	def _pong(self, words):
 		'''
@@ -178,7 +196,32 @@ class Progbot:
 			if  self._owner and words[3] == ':!q':
 				self._sock.send("QUIT\r\n")
 				self._done = True
-		
+	
+	def _checkSayChan(self, words):
+		'''
+			Talk to the specified channel.
+		'''
+		if words[1] == 'PRIVMSG' and words[2] == self.Nick:
+			
+			if 	self._owner and words[3] == ':!say':
+				
+				# Merge the words to one string
+				full = ' '.join(words)
+				
+				# Check if the structure is valid
+				regex = re.search(':!say #(\w+) (.+)', full)
+				if regex:
+					chan = regex.group(1)
+					message = regex.group(2)
+					self._sock.send("PRIVMSG #%s :%s\r\n" % (chan, message))
+	
+	def _checkKick(self, words):
+		'''
+			Auto rejoin when kicked
+		'''
+		if 	words[1] == 'KICK' and words[3] == self.Nick:
+			self._sock.send("JOIN %s\r\n" % words[2])
+			
 '''
 	END OF CODE
 '''
