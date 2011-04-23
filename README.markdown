@@ -2,22 +2,29 @@ Progbot
 =======
 
 *This project is under development. Most of the main features are NOT included yet.*
-**Version**: Alpha-0.1
+**Version**: Alpha-0.2
 
 Progbot is a progressive IRC bot in Python. The main purpose of this project is to build a learning IRC bot, which logs messages, analyze them, and learn from them. It can respond to questions, perform web queries, and can ignore/block other users.
 
 **Dependencies**:
-
-* Python 2.7
+* Python 2.5+
 
 Features
 --------
 
 * On the fly response editing
 * PRIVMSG, ACTION, and RAW response types
+* Flood protection
+* Auto Join when kicked
 
 Changelog
 ---------
+
+**Alpha-0.2**
+
+* Added !say functionality
+* Added auto join when kicked
+* Added flood protection
 
 **Alpha-0.1**
 
